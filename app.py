@@ -11,10 +11,12 @@ import json
 import os
 import base64
 from io import BytesIO
+from bs4 import BeautifulSoup
 
 CROSSREF_API = "https://api.crossref.org/works/"
 SEMANTIC_SCHOLAR_API = "https://api.semanticscholar.org/graph/v1/paper/"
 HUGGINGFACE_API = "https://api.inference.huggingface.co/models/facebook/bart-large-mnli"
+DOI_RESOLVER = "https://doi.org/"
 
 st.set_page_config(
     page_title="Snowih",
@@ -38,6 +40,10 @@ def initialize_session_state():
         st.session_state.main_paper = None
     if 'criteria_set' not in st.session_state:
         st.session_state.criteria_set = False
+    if 'snowballed_papers' not in st.session_state:
+        st.session_state.snowballed_papers = set()
+    if 'failed_dois' not in st.session_state:
+        st.session_state.failed_dois = set()
 
 initialize_session_state()
 
@@ -54,12 +60,61 @@ def apply_custom_css():
             font-family: 'Inter', sans-serif;
         }
         
+        .header-container {
+            position: relative;
+            width: 100%;
+            height: 350px;
+            overflow: hidden;
+            margin-bottom: 2rem;
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            justify-content: flex-end;
+            padding: 0.2rem 4rem 1rem 1rem;
+        }
+        
+        .header-content {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: flex-end;
+            max-width: 1200px;
+            width: 100%;
+        }
+        
+        .header-logo {
+            flex: 0 0 auto;
+            margin-right: 2rem;
+        }
+        
+        .header-text {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: flex-end;
+        }
+        
+        .logo {
+            width: 340px;
+            height: 340px;
+            object-fit: contain;
+        }
+        
         .main-header {
-            font-size: 2.5rem;
+            font-size: 5.6rem;
             color: #000000;
-            text-align: center;
-            margin-bottom: 1rem;
+            text-align: right;
+            margin-bottom: 0.5rem;
             font-weight: 700;
+        }
+        
+        .header-subtitle {
+            font-size: 3rem !important;
+            color: #000000;
+            text-align: right;
+            margin-bottom: 1rem;
+            line-height: 1.1;
         }
         
         .section-title {
@@ -366,19 +421,104 @@ def apply_custom_css():
         .download-options > div {
             display: inline-block;
         }
+        
+        .error-message {
+            color: #EF4444;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+        
+        .progress-details {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        
+        .progress-text {
+            font-size: 0.875rem;
+            color: #000000;
+        }
+        
+        .footer-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #000;
+            padding: 1rem;
+            font-size: 1.05rem;
+            background-color: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+            z-index: 1000;
+        }
+        .footer-left { 
+            text-align:left; 
+        }
+        .footer-center { 
+            display:flex; 
+            gap:40px; 
+            justify-content:center; 
+            align-items:center; 
+        }
+        .footer-link { 
+            color:#3498db; 
+            text-decoration:none; 
+            transition:color 0.3s ease; 
+        }
+        .footer-link:hover { 
+            color:#5682B1; 
+        }
+        
+        .main-content {
+            padding-bottom: 80px;
+        }
     </style>
     """, unsafe_allow_html=True)
 
 apply_custom_css()
 
+def get_image_as_base64(path):
+    try:
+        with open(path, "rb") as image_file:
+            return base64.b64encode(image_file.read()).decode()
+    except Exception as e:
+        st.error(f"Error loading image {path}: {e}")
+        return ""
+
+def render_header():
+    logo_base64 = get_image_as_base64("assets/1.png")
+    
+    st.markdown(f"""
+    <div class="header-container">
+        <div class="header-content">
+            <div class="header-logo">
+                <img src="data:image/png;base64,{logo_base64}" class="logo" alt="Snowih Logo">
+            </div>
+            <div class="header-text">
+                <h1 class="main-header">Snowih</h1>
+                <p class="header-subtitle">AI-Powered Backward Snowballing for Reproducible Literature Searches.</p>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
 def extract_doi(text):
-    doi_pattern = r'10\.\d+\/[^\s]+'
-    match = re.search(doi_pattern, text)
+    doi_pattern = r'10\.\d{4,9}/[-._;()/:A-Z0-9]+'
+    match = re.search(doi_pattern, text, re.IGNORECASE)
     return match.group(0) if match else None
+
+def clean_doi(doi):
+    doi = re.sub(r'^https?://doi\.org/', '', doi)
+    doi = re.sub(r'^doi:', '', doi, flags=re.IGNORECASE)
+    doi = doi.strip()
+    return doi
 
 def fetch_paper_crossref(doi):
     try:
-        doi = re.sub(r'^https?://doi\.org/', '', doi)
+        doi = clean_doi(doi)
         url = f"{CROSSREF_API}{doi}"
         headers = {'User-Agent': 'ResearchSnowballer/1.0 (mailto:your.email@example.com)'}
         response = requests.get(url, headers=headers, timeout=15)
@@ -435,7 +575,7 @@ def fetch_paper_crossref(doi):
 
 def fetch_paper_semantic_scholar(doi):
     try:
-        doi = re.sub(r'^https?://doi\.org/', '', doi)
+        doi = clean_doi(doi)
         url = f"{SEMANTIC_SCHOLAR_API}DOI:{doi}"
         params = {
             'fields': 'title,authors,year,publicationDate,venue,referenceCount,citationCount,references,abstract'
@@ -475,14 +615,128 @@ def fetch_paper_semantic_scholar(doi):
     except Exception as e:
         return None
 
+def fetch_paper_doi_resolver(doi):
+    try:
+        doi = clean_doi(doi)
+        url = f"{DOI_RESOLVER}{doi}"
+        headers = {
+            'Accept': 'application/vnd.citationstyles.csl+json',
+            'User-Agent': 'ResearchSnowballer/1.0 (mailto:your.email@example.com)'
+        }
+        response = requests.get(url, headers=headers, timeout=15)
+        
+        if response.status_code != 200:
+            return None
+            
+        data = response.json()
+        
+        title = data.get('title', '')
+        if isinstance(title, list):
+            title = title[0] if title else ''
+            
+        authors = []
+        for author in data.get('author', []):
+            given = author.get('given', '')
+            family = author.get('family', '')
+            if given or family:
+                authors.append(f"{given} {family}".strip())
+        
+        year = data.get('issued', {}).get('date-parts', [['']])[0][0]
+        if not year:
+            year = data.get('published-print', {}).get('date-parts', [['']])[0][0]
+        if not year:
+            year = data.get('published-online', {}).get('date-parts', [['']])[0][0]
+        
+        journal = data.get('container-title', '')
+        if isinstance(journal, list):
+            journal = journal[0] if journal else ''
+        
+        references = []
+        citation_count = 0
+        
+        return {
+            'title': title,
+            'authors': authors,
+            'year': year,
+            'journal': journal,
+            'abstract': '',
+            'references': references,
+            'doi': doi,
+            'citation_count': citation_count,
+            'source': 'DOI Resolver'
+        }
+    except Exception as e:
+        return None
+
+def fetch_paper_web_scraping(doi):
+    try:
+        doi = clean_doi(doi)
+        url = f"{DOI_RESOLVER}{doi}"
+        headers = {'User-Agent': 'ResearchSnowballer/1.0 (mailto:your.email@example.com)'}
+        response = requests.get(url, headers=headers, timeout=15)
+        
+        if response.status_code != 200:
+            return None
+            
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        title = ""
+        title_tag = soup.find('h1', class_='citation__title')
+        if title_tag:
+            title = title_tag.get_text().strip()
+        
+        authors = []
+        author_tags = soup.find_all('span', class_='citation__author')
+        for author_tag in author_tags:
+            authors.append(author_tag.get_text().strip())
+        
+        journal = ""
+        journal_tag = soup.find('span', class_='citation__journal')
+        if journal_tag:
+            journal = journal_tag.get_text().strip()
+        
+        year = ""
+        year_tag = soup.find('span', class_='citation__date')
+        if year_tag:
+            year_match = re.search(r'\b(19|20)\d{2}\b', year_tag.get_text())
+            if year_match:
+                year = year_match.group(0)
+        
+        references = []
+        ref_section = soup.find('div', class_='references')
+        if ref_section:
+            ref_links = ref_section.find_all('a', href=True)
+            for link in ref_links:
+                ref_doi = extract_doi(link.get('href', ''))
+                if ref_doi:
+                    references.append(ref_doi)
+        
+        return {
+            'title': title,
+            'authors': authors,
+            'year': year,
+            'journal': journal,
+            'abstract': '',
+            'references': references,
+            'doi': doi,
+            'citation_count': 0,
+            'source': 'Web Scraping'
+        }
+    except Exception as e:
+        return None
+
 def fetch_paper(doi):
-    paper = fetch_paper_crossref(doi)
-    if paper:
-        return paper
+    sources = [
+        fetch_paper_crossref,
+        fetch_paper_semantic_scholar,
+        fetch_paper_doi_resolver,
+        fetch_paper_web_scraping
+    ]
     
-    paper = fetch_paper_semantic_scholar(doi)
-    if paper:
-        return paper
+    for source in sources:
+        paper = source(doi)
+        if paper and paper.get('title'):
+            return paper
     
     return {
         'title': f"Paper with DOI: {doi}",
@@ -645,12 +899,15 @@ def screen_paper_with_rules(paper, criteria):
         'ai_confidence': 1.0 if eligible else 0.0
     }
 
-def add_paper_to_graph(doi, parent_doi=None, is_main_paper=False):
+def add_paper_to_graph(doi, parent_doi=None, is_main_paper=False, criteria=None):
+    doi = clean_doi(doi)
+    
     if doi in st.session_state.papers:
         return True
         
     paper = fetch_paper(doi)
-    if not paper:
+    if not paper or not paper.get('title'):
+        st.session_state.failed_dois.add(doi)
         st.error(f"Failed to fetch paper with DOI: {doi}")
         return False
         
@@ -659,8 +916,9 @@ def add_paper_to_graph(doi, parent_doi=None, is_main_paper=False):
     if is_main_paper:
         st.session_state.main_paper = doi
     
-    if st.session_state.criteria:
-        screening_result = screen_paper_with_ai(paper, st.session_state.criteria)
+    screening_criteria = criteria if criteria is not None else st.session_state.criteria
+    if screening_criteria:
+        screening_result = screen_paper_with_ai(paper, screening_criteria)
         st.session_state.screening_results[doi] = screening_result
     
     st.session_state.graph.add_node(
@@ -678,6 +936,54 @@ def add_paper_to_graph(doi, parent_doi=None, is_main_paper=False):
         st.session_state.graph.add_edge(parent_doi, doi)
     
     return True
+
+def snowball_paper(doi, criteria=None):
+    doi = clean_doi(doi)
+    
+    if doi in st.session_state.snowballed_papers:
+        return 0
+    
+    if doi not in st.session_state.papers:
+        return 0
+    
+    paper = st.session_state.papers[doi]
+    references = paper.get('references', [])
+    
+    success_count = 0
+    for ref_doi in references:
+        ref_doi_clean = clean_doi(ref_doi)
+        if add_paper_to_graph(ref_doi_clean, parent_doi=doi, criteria=criteria):
+            success_count += 1
+    
+    st.session_state.snowballed_papers.add(doi)
+    
+    return success_count
+
+def detailed_progress_bar(current, total, start_time, status_text):
+    progress = current / total if total > 0 else 0
+    elapsed_time = time.time() - start_time
+    
+    if current > 0:
+        avg_time_per_item = elapsed_time / current
+        remaining_items = total - current
+        estimated_remaining = avg_time_per_item * remaining_items
+    else:
+        estimated_remaining = 0
+    
+    elapsed_str = f"{elapsed_time:.1f}s"
+    remaining_str = f"{estimated_remaining:.1f}s" if estimated_remaining > 0 else "Calculating..."
+    
+    st.markdown(f"""
+    <div class="progress-details">
+        <div class="progress-text">Processing: {current}/{total} papers</div>
+        <div class="progress-text">Elapsed: {elapsed_str} | Remaining: {remaining_str}</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    progress_bar = st.progress(progress)
+    status_text.text(f"Processing paper {current}/{total}")
+    
+    return progress_bar
 
 def create_network_graph():
     net = Network(height="600px", width="100%", directed=True, notebook=True, cdn_resources='in_line')
@@ -923,10 +1229,6 @@ def create_pdf():
         st.error(f"Error creating PDF: {str(e)}")
         return None
 
-def render_header():
-    st.markdown("<h1 class='main-header'>🤖 Snowih</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #000000; margin-bottom: 2rem;'>Visualize and screen research papers with AI assistance</p>", unsafe_allow_html=True)
-
 def render_criteria_panel():
     st.markdown("<div class='control-panel'>", unsafe_allow_html=True)
     st.markdown("## Set Screening Criteria")
@@ -996,11 +1298,11 @@ def render_control_panel():
             if doi_input:
                 with st.spinner("Fetching paper..."):
                     start_time = time.time()
-                    success = add_paper_to_graph(doi_input, is_main_paper=True)
+                    success = add_paper_to_graph(doi_input, is_main_paper=True, criteria=st.session_state.criteria)
                     elapsed_time = time.time() - start_time
                     
                     if success:
-                        st.session_state.selected_node = doi_input
+                        st.session_state.selected_node = clean_doi(doi_input)
                         st.success(f"Paper added to the graph in {elapsed_time:.2f} seconds!")
             else:
                 st.error("Please enter a valid DOI")
@@ -1012,6 +1314,8 @@ def render_control_panel():
             st.session_state.selected_node = None
             st.session_state.screening_results = {}
             st.session_state.main_paper = None
+            st.session_state.snowballed_papers = set()
+            st.session_state.failed_dois = set()
             st.success("Graph has been reset!")
 
     st.markdown("</div>", unsafe_allow_html=True)
@@ -1053,18 +1357,19 @@ def render_paper_details():
         
         ref_data = []
         for ref_doi in paper['references']:
-            if ref_doi in st.session_state.papers:
-                ref_paper = st.session_state.papers[ref_doi]
+            ref_doi_clean = clean_doi(ref_doi)
+            if ref_doi_clean in st.session_state.papers:
+                ref_paper = st.session_state.papers[ref_doi_clean]
                 eligibility_status = ""
                 confidence = ""
-                if ref_doi in st.session_state.screening_results:
-                    if st.session_state.screening_results[ref_doi]['eligible']:
+                if ref_doi_clean in st.session_state.screening_results:
+                    if st.session_state.screening_results[ref_doi_clean]['eligible']:
                         eligibility_status = "Eligible"
                     else:
                         eligibility_status = "Not Eligible"
-                    confidence = f"{st.session_state.screening_results[ref_doi].get('ai_confidence', 0):.2f}"
+                    confidence = f"{st.session_state.screening_results[ref_doi_clean].get('ai_confidence', 0):.2f}"
                 ref_data.append({
-                    'DOI': ref_doi,
+                    'DOI': ref_doi_clean,
                     'Title': ref_paper['title'],
                     'Authors': ', '.join(ref_paper['authors']),
                     'Year': ref_paper['year'],
@@ -1075,7 +1380,7 @@ def render_paper_details():
                 })
             else:
                 ref_data.append({
-                    'DOI': ref_doi,
+                    'DOI': ref_doi_clean,
                     'Title': 'Not loaded',
                     'Authors': '',
                     'Year': '',
@@ -1090,20 +1395,13 @@ def render_paper_details():
         
         if st.button("Load All References", key="load_all_refs"):
             with st.spinner("Loading all references..."):
-                progress_bar = st.progress(0)
                 status_text = st.empty()
                 start_time = time.time()
                 
-                success_count = 0
-                for i, ref_doi in enumerate(paper['references']):
-                    status_text.text(f"Loading reference {i+1}/{len(paper['references'])}")
-                    if add_paper_to_graph(ref_doi, parent_doi=st.session_state.selected_node):
-                        success_count += 1
-                    progress_bar.progress((i + 1) / len(paper['references']))
-                    time.sleep(0.5)
+                success_count = snowball_paper(st.session_state.selected_node, st.session_state.criteria)
                 
                 elapsed_time = time.time() - start_time
-                status_text.text(f"Completed: {success_count}/{len(paper['references'])} references loaded in {elapsed_time:.2f} seconds")
+                status_text.text(f"Completed: {success_count} references loaded in {elapsed_time:.2f} seconds")
                 st.success(f"Loaded {success_count} references successfully")
                 
                 st.rerun()
@@ -1186,16 +1484,9 @@ def render_snowballing_section():
                         else:
                             new_criteria = st.session_state.criteria
                         
-                        paper = st.session_state.papers[selected_snowball_doi]
-                        success_count = 0
-                        start_time = time.time()
+                        success_count = snowball_paper(selected_snowball_doi, new_criteria)
                         
-                        for ref_doi in paper['references']:
-                            if add_paper_to_graph(ref_doi, parent_doi=selected_snowball_doi):
-                                success_count += 1
-                        
-                        elapsed_time = time.time() - start_time
-                        st.success(f"Added {success_count} references for {selected_snowball_doi} in {elapsed_time:.2f} seconds!")
+                        st.success(f"Added {success_count} references for {selected_snowball_doi}!")
                         
                         st.rerun()
                 else:
@@ -1241,30 +1532,32 @@ def render_snowballing_section():
                     else:
                         all_new_criteria = st.session_state.criteria
                     
-                    progress_bar = st.progress(0)
                     status_text = st.empty()
                     start_time = time.time()
                     
-                    total_references = 0
-                    success_count = 0
+                    total_success = 0
+                    papers_to_snowball = [doi for doi in st.session_state.papers.keys() 
+                                        if doi not in st.session_state.snowballed_papers and doi != st.session_state.main_paper]
                     
-                    for i, doi in enumerate(snowballed_papers):
-                        status_text.text(f"Processing paper {i+1}/{len(snowballed_papers)}: {doi}")
-                        paper = st.session_state.papers[doi]
+                    for i, doi in enumerate(papers_to_snowball):
+                        detailed_progress_bar(i+1, len(papers_to_snowball), start_time, status_text)
                         
-                        for ref_doi in paper['references']:
-                            total_references += 1
-                            if add_paper_to_graph(ref_doi, parent_doi=doi):
-                                success_count += 1
-                        
-                        progress_bar.progress((i + 1) / len(snowballed_papers))
+                        success_count = snowball_paper(doi, all_new_criteria)
+                        total_success += success_count
                         time.sleep(0.5)
                     
                     elapsed_time = time.time() - start_time
-                    status_text.text(f"Completed: {success_count}/{total_references} references loaded in {elapsed_time:.2f} seconds")
-                    st.success(f"Loaded {success_count} references from all papers!")
+                    status_text.text(f"Completed: {total_success} references loaded from all papers in {elapsed_time:.2f} seconds")
+                    st.success(f"Loaded {total_success} references from all papers!")
                     
                     st.rerun()
+    
+    if st.session_state.failed_dois:
+        st.markdown("### Failed to Fetch")
+        failed_dois_list = list(st.session_state.failed_dois)
+        st.markdown(f"<div class='error-message'>Failed to fetch {len(failed_dois_list)} papers. These DOIs will be retried in subsequent operations.</div>", unsafe_allow_html=True)
+        with st.expander("View Failed DOIs"):
+            st.write(failed_dois_list)
     
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -1450,20 +1743,29 @@ def render_network_visualization():
         )
 
 def render_footer():
-    st.markdown("---")
     st.markdown("""
-    <div style="text-align: center; color: #000000; padding: 1rem;">
-        <p>Snowih 2025</p>
+    <div class="footer-container">
+        <div class="footer-left">
+            <div>© 2025 Vihaan Sahu</div>
+            <div>Licensed under the Apache License, Version 2.0</div>
+        </div>
+        <div class="footer-center">
+            <span>Snowih</span>
+            <span>Ai-Powered Snowballing</span>
+            <a href='https://github.com/Snowih/Snowih' target='_blank' class='footer-link'>GitHub Repository</a>
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
 def main():
+    st.markdown("<div class='main-content'>", unsafe_allow_html=True)
     render_header()
     render_criteria_panel()
     render_control_panel()
     render_paper_details()
     render_snowballing_section()
     render_network_visualization()
+    st.markdown("</div>", unsafe_allow_html=True)
     render_footer()
 
 if __name__ == "__main__":
