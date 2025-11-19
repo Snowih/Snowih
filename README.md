@@ -1,6 +1,5 @@
 
 ![111](example/sss.png)
-
 [![Python Version](https://img.shields.io/badge/python-3.12+-blue)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Streamlit Demo](https://img.shields.io/badge/Streamlit-Demo-orange)](https://snowih.streamlit.app)
@@ -32,6 +31,7 @@ It identifies references from uploaded studies and recursively explores their ci
 👥 Author
 
 Snowih — Created and Developed by Vihaan Sahu
+
 Maintained under the Snowih Organization
 
 **NOTE:** Snowih is under development currently and is planned to be in production in 2026.
@@ -41,6 +41,7 @@ Maintained under the Snowih Organization
 ## 📄 License
 
 © 2025 Vihaan Sahu
+
 Licensed under the **Apache License 2.0**.
 
 ---
