@@ -42,7 +42,7 @@ Maintained under the Snowih Organization
 
 ## 📄 License
 
-© 2025 Vihaan Sahu
+Copyright (c) 2025 Vihaan Sahu
 
 Licensed under the **Apache License 2.0**.
 
