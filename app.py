@@ -301,6 +301,15 @@ def apply_custom_css():
             margin-bottom: 1.5rem;
         }
         
+        .criteria-panel {
+            background-color: transparent;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            margin-top: 10rem;
+        }
+        
         .element-container .stDivider {
             display: none;
         }
@@ -1230,7 +1239,7 @@ def create_pdf():
         return None
 
 def render_criteria_panel():
-    st.markdown("<div class='control-panel'>", unsafe_allow_html=True)
+    st.markdown("<div class='criteria-panel'>", unsafe_allow_html=True)
     st.markdown("## Set Screening Criteria")
 
     col1, col2 = st.columns(2)
