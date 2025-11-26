@@ -518,12 +518,12 @@ def apply_custom_css():
             }
             
             .main-header {
-                font-size: 3rem !important;
+                font-size: 2.8rem !important;
                 text-align: center !important;
             }
             
             .header-subtitle {
-                font-size: 1.8rem !important;
+                font-size: 1.6rem !important;
                 text-align: center !important;
             }
             
