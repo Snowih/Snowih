@@ -22,7 +22,14 @@ st.set_page_config(
     page_title="Snowih",
     page_icon="🤖",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
+    menu_items=None,
+    theme={
+        "primaryColor": "#333333",
+        "backgroundColor": "#FFFFFF",
+        "secondaryBackgroundColor": "#F0F2F6",
+        "textColor": "#000000",
+    }
 )
 
 def initialize_session_state():
@@ -63,58 +70,64 @@ def apply_custom_css():
         .header-container {
             position: relative;
             width: 100%;
-            height: 350px;
+            height: auto;
+            min-height: 300px;
             overflow: hidden;
             margin-bottom: 2rem;
             display: flex;
             flex-direction: row;
-            align-items: flex-start;
-            justify-content: flex-end;
-            padding: 0.2rem 4rem 1rem 1rem;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
         }
         
         .header-content {
             display: flex;
             flex-direction: row;
             align-items: center;
-            justify-content: flex-end;
+            justify-content: center;
             max-width: 1200px;
             width: 100%;
+            flex-wrap: wrap;
         }
         
         .header-logo {
             flex: 0 0 auto;
             margin-right: 2rem;
+            margin-bottom: 1rem;
         }
         
         .header-text {
             flex: 1 1 auto;
             display: flex;
             flex-direction: column;
-            justify-content: flex-start;
-            align-items: flex-end;
+            justify-content: center;
+            align-items: flex-start;
+            text-align: left;
         }
         
         .logo {
-            width: 340px;
-            height: 340px;
+            width: 280px;
+            height: 280px;
             object-fit: contain;
+            max-width: 100%;
         }
         
         .main-header {
-            font-size: 5.6rem;
+            font-size: clamp(2.5rem, 8vw, 5.6rem);
             color: #000000;
-            text-align: right;
+            text-align: left;
             margin-bottom: 0.5rem;
             font-weight: 700;
+            line-height: 1.1;
         }
         
         .header-subtitle {
-            font-size: 3rem !important;
+            font-size: clamp(1.2rem, 4vw, 3rem);
             color: #000000;
-            text-align: right;
+            text-align: left;
             margin-bottom: 1rem;
-            line-height: 1.1;
+            line-height: 1.2;
         }
         
         .section-title {
@@ -307,7 +320,7 @@ def apply_custom_css():
             border-radius: 0.5rem;
             padding: 1.5rem;
             margin-bottom: 1.5rem;
-            margin-top: 10rem;
+            margin-top: 2rem;
         }
         
         .element-container .stDivider {
@@ -425,6 +438,7 @@ def apply_custom_css():
             flex-direction: row;
             gap: 5px;
             margin-top: 1rem;
+            flex-wrap: wrap;
         }
         
         .download-options > div {
@@ -471,6 +485,7 @@ def apply_custom_css():
             gap:40px; 
             justify-content:center; 
             align-items:center; 
+            flex-wrap: wrap;
         }
         .footer-link { 
             color:#3498db; 
@@ -483,6 +498,49 @@ def apply_custom_css():
         
         .main-content {
             padding-bottom: 80px;
+        }
+        
+        @media (max-width: 768px) {
+            .header-container {
+                flex-direction: column;
+                height: auto;
+                padding: 1rem;
+                align-items: center;
+                text-align: center;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .header-logo {
+                margin-right: 0;
+                margin-bottom: 1rem;
+            }
+            
+            .header-text {
+                align-items: center;
+                text-align: center;
+            }
+            
+            .main-header {
+                text-align: center;
+            }
+            
+            .header-subtitle {
+                text-align: center;
+            }
+            
+            .logo {
+                width: 200px;
+                height: 200px;
+            }
+            
+            .footer-center {
+                gap: 20px;
+                font-size: 0.9rem;
+            }
         }
     </style>
     """, unsafe_allow_html=True)
