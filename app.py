@@ -22,7 +22,8 @@ st.set_page_config(
     page_title="Snowih",
     page_icon="🤖",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
+    initial_theme_state="light" 
 )
 
 def initialize_session_state():
@@ -63,64 +64,58 @@ def apply_custom_css():
         .header-container {
             position: relative;
             width: 100%;
-            height: auto;
-            min-height: 300px;
+            height: 350px;
             overflow: hidden;
             margin-bottom: 2rem;
             display: flex;
             flex-direction: row;
-            align-items: center;
-            justify-content: center;
-            padding: 1rem;
+            align-items: flex-start;
+            justify-content: flex-end;
+            padding: 0.2rem 4rem 1rem 1rem;
         }
         
         .header-content {
             display: flex;
             flex-direction: row;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-end;
             max-width: 1200px;
             width: 100%;
-            flex-wrap: wrap;
         }
         
         .header-logo {
             flex: 0 0 auto;
             margin-right: 2rem;
-            margin-bottom: 1rem;
         }
         
         .header-text {
             flex: 1 1 auto;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            align-items: flex-start;
-            text-align: left;
+            justify-content: flex-start;
+            align-items: flex-end;
         }
         
         .logo {
-            width: 280px;
-            height: 280px;
+            width: 340px;
+            height: 340px;
             object-fit: contain;
-            max-width: 100%;
         }
         
         .main-header {
-            font-size: clamp(2.5rem, 8vw, 5.6rem);
+            font-size: 5.6rem;
             color: #000000;
-            text-align: left;
+            text-align: right;
             margin-bottom: 0.5rem;
             font-weight: 700;
-            line-height: 1.1;
         }
         
         .header-subtitle {
-            font-size: clamp(1.2rem, 4vw, 3rem);
+            font-size: 3rem !important;
             color: #000000;
-            text-align: left;
+            text-align: right;
             margin-bottom: 1rem;
-            line-height: 1.2;
+            line-height: 1.1;
         }
         
         .section-title {
@@ -313,7 +308,7 @@ def apply_custom_css():
             border-radius: 0.5rem;
             padding: 1.5rem;
             margin-bottom: 1.5rem;
-            margin-top: 2rem;
+            margin-top: 10rem;
         }
         
         .element-container .stDivider {
@@ -431,7 +426,6 @@ def apply_custom_css():
             flex-direction: row;
             gap: 5px;
             margin-top: 1rem;
-            flex-wrap: wrap;
         }
         
         .download-options > div {
@@ -478,7 +472,6 @@ def apply_custom_css():
             gap:40px; 
             justify-content:center; 
             align-items:center; 
-            flex-wrap: wrap;
         }
         .footer-link { 
             color:#3498db; 
@@ -493,23 +486,30 @@ def apply_custom_css():
             padding-bottom: 80px;
         }
         
+        /* Responsiveness */
         @media (max-width: 768px) {
             .header-container {
-                flex-direction: column;
                 height: auto;
-                padding: 1rem;
+                flex-direction: column;
                 align-items: center;
-                text-align: center;
+                justify-content: center;
+                padding: 1rem;
             }
             
             .header-content {
                 flex-direction: column;
                 align-items: center;
+                justify-content: center;
             }
             
             .header-logo {
                 margin-right: 0;
                 margin-bottom: 1rem;
+            }
+            
+            .logo {
+                width: 200px;
+                height: 200px;
             }
             
             .header-text {
@@ -518,21 +518,27 @@ def apply_custom_css():
             }
             
             .main-header {
+                font-size: 3rem;
                 text-align: center;
             }
             
             .header-subtitle {
+                font-size: 1.8rem !important;
                 text-align: center;
             }
             
-            .logo {
-                width: 200px;
-                height: 200px;
+            .criteria-panel {
+                margin-top: 2rem;
+            }
+            
+            .footer-container {
+                flex-direction: column;
+                gap: 10px;
+                font-size: 0.9rem;
             }
             
             .footer-center {
                 gap: 20px;
-                font-size: 0.9rem;
             }
         }
     </style>
