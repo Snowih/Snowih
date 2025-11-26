@@ -22,14 +22,7 @@ st.set_page_config(
     page_title="Snowih",
     page_icon="🤖",
     layout="wide",
-    initial_sidebar_state="expanded",
-    menu_items=None,
-    theme={
-        "primaryColor": "#333333",
-        "backgroundColor": "#FFFFFF",
-        "secondaryBackgroundColor": "#F0F2F6",
-        "textColor": "#000000",
-    }
+    initial_sidebar_state="expanded"
 )
 
 def initialize_session_state():
