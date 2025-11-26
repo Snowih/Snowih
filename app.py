@@ -22,8 +22,7 @@ st.set_page_config(
     page_title="Snowih",
     page_icon="🤖",
     layout="wide",
-    initial_sidebar_state="expanded",
-    initial_theme_state="light" 
+    initial_sidebar_state="expanded"
 )
 
 def initialize_session_state():
@@ -51,13 +50,20 @@ initialize_session_state()
 def apply_custom_css():
     st.markdown("""
     <style>
+        /* Force light theme */
+        :root {
+            --background-color: #FFFFFF;
+            --text-color: #000000;
+            --primary-color: #333333;
+        }
+        
         * {
             box-sizing: border-box;
         }
         
         body {
-            background-color: #FFFFFF;
-            color: #000000;
+            background-color: var(--background-color) !important;
+            color: var(--text-color) !important;
             font-family: 'Inter', sans-serif;
         }
         
@@ -104,7 +110,7 @@ def apply_custom_css():
         
         .main-header {
             font-size: 5.6rem;
-            color: #000000;
+            color: var(--text-color) !important;
             text-align: right;
             margin-bottom: 0.5rem;
             font-weight: 700;
@@ -112,7 +118,7 @@ def apply_custom_css():
         
         .header-subtitle {
             font-size: 3rem !important;
-            color: #000000;
+            color: var(--text-color) !important;
             text-align: right;
             margin-bottom: 1rem;
             line-height: 1.1;
@@ -120,63 +126,64 @@ def apply_custom_css():
         
         .section-title {
             font-size: 1.5rem;
-            color: #000000;
+            color: var(--text-color) !important;
             margin-top: 1.5rem;
             margin-bottom: 1rem;
             font-weight: 600;
         }
         
         .stApp {
-            background-color: #FFFFFF;
-            color: #000000;
+            background-color: var(--background-color) !important;
+            color: var(--text-color) !important;
         }
         
+        /* Override all Streamlit elements to use light theme */
         div[data-testid="stVerticalBlock"] > div[style*="flex-direction: column;"] > div[style*="flex-direction: column;"] {
-            background-color: #FFFFFF;
-            border: none;
-            box-shadow: none;
-            color: #000000;
+            background-color: var(--background-color) !important;
+            border: none !important;
+            box-shadow: none !important;
+            color: var(--text-color) !important;
         }
         
         div[data-testid="stVerticalBlockBorderWrapper"] {
-            border: none;
+            border: none !important;
         }
         
         div[data-testid="stVerticalBlock"] {
-            border: none;
-            box-shadow: none;
-            background-color: #FFFFFF;
-            color: #000000;
+            border: none !important;
+            box-shadow: none !important;
+            background-color: var(--background-color) !important;
+            color: var(--text-color) !important;
         }
         
         .stTextInput > div > div > input {
-            background-color: #E6F3FF;
-            border: 1px solid transparent;
-            border-radius: 0.375rem;
-            color: #000000 !important;
-            caret-color: #000000;
+            background-color: #E6F3FF !important;
+            border: 1px solid transparent !important;
+            border-radius: 0.375rem !important;
+            color: var(--text-color) !important;
+            caret-color: var(--text-color) !important;
         }
         
         .stSelectbox > div > div > select {
-            background-color: #E6F3FF;
-            border: 1px solid transparent;
-            border-radius: 0.375rem;
-            color: #000000 !important;
-            caret-color: #000000;
+            background-color: #E6F3FF !important;
+            border: 1px solid transparent !important;
+            border-radius: 0.375rem !important;
+            color: var(--text-color) !important;
+            caret-color: var(--text-color) !important;
         }
         
         .stNumberInput > div > div > input {
-            background-color: #E6F3FF;
-            border: 1px solid transparent;
-            border-radius: 0.375rem;
-            color: #000000 !important;
-            caret-color: #000000;
+            background-color: #E6F3FF !important;
+            border: 1px solid transparent !important;
+            border-radius: 0.375rem !important;
+            color: var(--text-color) !important;
+            caret-color: var(--text-color) !important;
         }
         
         .snowball-inputs .stNumberInput > div > div > input,
         .snowball-inputs .stSelectbox > div > div > select {
             background-color: #bfbfbf !important;
-            color: #000000 !important;
+            color: var(--text-color) !important;
         }
         
         .stTextInput > div > div > input::placeholder {
@@ -184,12 +191,12 @@ def apply_custom_css():
         }
         
         .stButton button, button, .stDownloadButton, .stDownloadButton button {
-            background-color: #333333 !important;
+            background-color: var(--primary-color) !important;
             color: #FFFFFF !important;
-            border: none;
-            border-radius: 0.375rem;
-            padding: 0.5rem 1rem;
-            font-weight: 500;
+            border: none !important;
+            border-radius: 0.375rem !important;
+            padding: 0.5rem 1rem !important;
+            font-weight: 500 !important;
         }
         
         .stButton button p, button p, .stDownloadButton p, .stDownloadButton button p {
@@ -197,7 +204,7 @@ def apply_custom_css():
         }
         
         button[kind="primary"] {
-            background-color: #333333 !important;
+            background-color: var(--primary-color) !important;
             color: #FFFFFF !important;
         }
         
@@ -218,19 +225,19 @@ def apply_custom_css():
         }
         
         .stDataFrame {
-            border: none;
-            background-color: #FFFFFF;
-            color: #000000;
+            border: none !important;
+            background-color: var(--background-color) !important;
+            color: var(--text-color) !important;
         }
         
         .paper-card {
             background-color: #1E3A8A !important;
             color: #FFFFFF !important;
-            border-radius: 0.5rem;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            border-left: 4px solid #3B82F6;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 0.5rem !important;
+            padding: 1.5rem !important;
+            margin-bottom: 1.5rem !important;
+            border-left: 4px solid #3B82F6 !important;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
         }
         
         .paper-card * {
@@ -238,174 +245,154 @@ def apply_custom_css():
         }
         
         .doi-badge {
-            background-color: #FFFFFF;
-            color: #000000;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.875rem;
-            font-weight: 600;
-            display: inline-block;
-            margin-top: 0.5rem;
-            margin-right: 0.5rem;
+            background-color: #FFFFFF !important;
+            color: var(--text-color) !important;
+            padding: 0.25rem 0.75rem !important;
+            border-radius: 9999px !important;
+            font-size: 0.875rem !important;
+            font-weight: 600 !important;
+            display: inline-block !important;
+            margin-top: 0.5rem !important;
+            margin-right: 0.5rem !important;
         }
         
         .citation-badge {
-            background-color: #FFFFFF;
-            color: #000000;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.875rem;
-            font-weight: 600;
-            display: inline-block;
-            margin-top: 0.5rem;
-            margin-right: 0.5rem;
+            background-color: #FFFFFF !important;
+            color: var(--text-color) !important;
+            padding: 0.25rem 0.75rem !important;
+            border-radius: 9999px !important;
+            font-size: 0.875rem !important;
+            font-weight: 600 !important;
+            display: inline-block !important;
+            margin-top: 0.5rem !important;
+            margin-right: 0.5rem !important;
         }
         
         .eligible-badge {
-            background-color: #10B981;
-            color: #FFFFFF;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.875rem;
-            font-weight: 600;
-            display: inline-block;
-            margin-top: 0.5rem;
+            background-color: #10B981 !important;
+            color: #FFFFFF !important;
+            padding: 0.25rem 0.75rem !important;
+            border-radius: 9999px !important;
+            font-size: 0.875rem !important;
+            font-weight: 600 !important;
+            display: inline-block !important;
+            margin-top: 0.5rem !important;
         }
         
         .not-eligible-badge {
-            background-color: #EF4444;
-            color: #FFFFFF;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.875rem;
-            font-weight: 600;
-            display: inline-block;
-            margin-top: 0.5rem;
+            background-color: #EF4444 !important;
+            color: #FFFFFF !important;
+            padding: 0.25rem 0.75rem !important;
+            border-radius: 9999px !important;
+            font-size: 0.875rem !important;
+            font-weight: 600 !important;
+            display: inline-block !important;
+            margin-top: 0.5rem !important;
         }
         
         .network-container {
-            border-radius: 0.5rem;
-            overflow: hidden;
-            margin-bottom: 2rem;
-            border: 1px solid #000000;
+            border-radius: 0.5rem !important;
+            overflow: hidden !important;
+            margin-bottom: 2rem !important;
+            border: 1px solid var(--text-color) !important;
         }
         
         .progress-container {
-            margin: 1rem 0;
+            margin: 1rem 0 !important;
         }
         
         .control-panel {
-            background-color: transparent;
-            border: none;
-            border-radius: 0.5rem;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
+            background-color: transparent !important;
+            border: none !important;
+            border-radius: 0.5rem !important;
+            padding: 1.5rem !important;
+            margin-bottom: 1.5rem !important;
         }
         
         .criteria-panel {
-            background-color: transparent;
-            border: none;
-            border-radius: 0.5rem;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            margin-top: 10rem;
+            background-color: transparent !important;
+            border: none !important;
+            border-radius: 0.5rem !important;
+            padding: 1.5rem !important;
+            margin-bottom: 1.5rem !important;
+            margin-top: 10rem !important;
         }
         
         .element-container .stDivider {
-            display: none;
+            display: none !important;
         }
         
-        .css-1d391kg {
-            background-color: #FFFFFF;
-            color: #000000;
-        }
-        
-        .css-1v0mbdj {
-            background-color: #FFFFFF;
-            color: #000000;
-        }
-        
-        .css-1kyxreq {
-            background-color: #FFFFFF;
-            color: #000000;
-        }
-        
-        .css-1r6slv0 {
-            background-color: #FFFFFF;
-            color: #000000;
-        }
-        
-        .css-1c0m1x2 {
-            background-color: #FFFFFF;
-            color: #000000;
+        .css-1d391kg, .css-1v0mbdj, .css-1kyxreq, .css-1r6slv0, .css-1c0m1x2 {
+            background-color: var(--background-color) !important;
+            color: var(--text-color) !important;
         }
         
         .dataframe {
-            background-color: #FFFFFF !important;
-            color: #000000 !important;
+            background-color: var(--background-color) !important;
+            color: var(--text-color) !important;
         }
         
         .dataframe td {
-            background-color: #FFFFFF !important;
-            color: #000000 !important;
+            background-color: var(--background-color) !important;
+            color: var(--text-color) !important;
         }
         
         .dataframe th {
-            background-color: #FFFFFF !important;
-            color: #000000 !important;
+            background-color: var(--background-color) !important;
+            color: var(--text-color) !important;
         }
         
         .streamlit-expanderHeader {
-            background-color: #FFFFFF !important;
-            color: #000000 !important;
+            background-color: var(--background-color) !important;
+            color: var(--text-color) !important;
         }
         
         .stRadio > div {
-            background-color: #FFFFFF !important;
-            color: #000000 !important;
+            background-color: var(--background-color) !important;
+            color: var(--text-color) !important;
         }
         
         .stSelectbox > div {
-            background-color: #FFFFFF !important;
-            color: #000000 !important;
+            background-color: var(--background-color) !important;
+            color: var(--text-color) !important;
         }
         
         .stNumberInput > div {
-            background-color: #FFFFFF !important;
-            color: #000000 !important;
+            background-color: var(--background-color) !important;
+            color: var(--text-color) !important;
         }
         
         .stTextInput > div {
-            background-color: #FFFFFF !important;
-            color: #000000 !important;
+            background-color: var(--background-color) !important;
+            color: var(--text-color) !important;
         }
         
         .stButton > button {
-            background-color: #333333 !important;
+            background-color: var(--primary-color) !important;
             color: #FFFFFF !important;
         }
         
         .stDownloadButton {
-            background-color: #333333 !important;
+            background-color: var(--primary-color) !important;
             color: #FFFFFF !important;
         }
         
         .stProgress > div > div > div {
-            background-color: #333333 !important;
+            background-color: var(--primary-color) !important;
         }
         
         p, h1, h2, h3, h4, h5, h6, li, span, div, label {
-            color: #000000 !important;
+            color: var(--text-color) !important;
         }
         
         input, select, textarea {
-            color: #000000 !important;
+            color: var(--text-color) !important;
         }
         
         .stAlert {
-            background-color: #FFFFFF !important;
-            color: #000000 !important;
-            border: 1px solid #000000 !important;
+            background-color: var(--background-color) !important;
+            color: var(--text-color) !important;
+            border: 1px solid var(--text-color) !important;
         }
         
         .paper-card, .paper-card *, .paper-card p, .paper-card h3, .paper-card strong, .paper-card span {
@@ -413,7 +400,7 @@ def apply_custom_css():
         }
         
         .doi-badge, .citation-badge {
-            color: #000000 !important;
+            color: var(--text-color) !important;
         }
         
         .stButton button, button, .stDownloadButton, .stDownloadButton button,
@@ -422,123 +409,127 @@ def apply_custom_css():
         }
         
         .download-options {
-            display: flex;
-            flex-direction: row;
-            gap: 5px;
-            margin-top: 1rem;
+            display: flex !important;
+            flex-direction: row !important;
+            gap: 5px !important;
+            margin-top: 1rem !important;
         }
         
         .download-options > div {
-            display: inline-block;
+            display: inline-block !important;
         }
         
         .error-message {
-            color: #EF4444;
-            font-size: 0.875rem;
-            margin-top: 0.5rem;
+            color: #EF4444 !important;
+            font-size: 0.875rem !important;
+            margin-top: 0.5rem !important;
         }
         
         .progress-details {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 0.5rem;
+            display: flex !important;
+            justify-content: space-between !important;
+            margin-bottom: 0.5rem !important;
         }
         
         .progress-text {
-            font-size: 0.875rem;
-            color: #000000;
+            font-size: 0.875rem !important;
+            color: var(--text-color) !important;
         }
         
         .footer-container {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            color: #000;
-            padding: 1rem;
-            font-size: 1.05rem;
-            background-color: #f8f9fa;
-            border-top: 1px solid #e9ecef;
-            z-index: 1000;
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            color: var(--text-color) !important;
+            padding: 1rem !important;
+            font-size: 1.05rem !important;
+            background-color: #f8f9fa !important;
+            border-top: 1px solid #e9ecef !important;
+            z-index: 1000 !important;
         }
+        
         .footer-left { 
-            text-align:left; 
+            text-align:left !important; 
         }
+        
         .footer-center { 
-            display:flex; 
-            gap:40px; 
-            justify-content:center; 
-            align-items:center; 
+            display:flex !important; 
+            gap:40px !important; 
+            justify-content:center !important; 
+            align-items:center !important; 
         }
+        
         .footer-link { 
-            color:#3498db; 
-            text-decoration:none; 
-            transition:color 0.3s ease; 
+            color:#3498db !important; 
+            text-decoration:none !important; 
+            transition:color 0.3s ease !important; 
         }
+        
         .footer-link:hover { 
-            color:#5682B1; 
+            color:#5682B1 !important; 
         }
         
         .main-content {
-            padding-bottom: 80px;
+            padding-bottom: 80px !important;
         }
         
         /* Responsiveness */
         @media (max-width: 768px) {
             .header-container {
-                height: auto;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                padding: 1rem;
+                height: auto !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                justify-content: center !important;
+                padding: 1rem !important;
             }
             
             .header-content {
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
+                flex-direction: column !important;
+                align-items: center !important;
+                justify-content: center !important;
             }
             
             .header-logo {
-                margin-right: 0;
-                margin-bottom: 1rem;
+                margin-right: 0 !important;
+                margin-bottom: 1rem !important;
             }
             
             .logo {
-                width: 200px;
-                height: 200px;
+                width: 200px !important;
+                height: 200px !important;
             }
             
             .header-text {
-                align-items: center;
-                text-align: center;
+                align-items: center !important;
+                text-align: center !important;
             }
             
             .main-header {
-                font-size: 3rem;
-                text-align: center;
+                font-size: 3rem !important;
+                text-align: center !important;
             }
             
             .header-subtitle {
                 font-size: 1.8rem !important;
-                text-align: center;
+                text-align: center !important;
             }
             
             .criteria-panel {
-                margin-top: 2rem;
+                margin-top: 2rem !important;
             }
             
             .footer-container {
-                flex-direction: column;
-                gap: 10px;
-                font-size: 0.9rem;
+                flex-direction: column !important;
+                gap: 10px !important;
+                font-size: 0.9rem !important;
             }
             
             .footer-center {
-                gap: 20px;
+                gap: 20px !important;
             }
         }
     </style>
