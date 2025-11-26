@@ -50,23 +50,64 @@ initialize_session_state()
 def apply_custom_css():
     st.markdown("""
     <style>
-        /* Force light theme */
+        /* Force light theme - override everything */
         :root {
-            --background-color: #FFFFFF;
-            --text-color: #000000;
-            --primary-color: #333333;
+            --background-color: #FFFFFF !important;
+            --text-color: #000000 !important;
+            --primary-color: #333333 !important;
+            --secondary-background-color: #F0F2F6 !important;
         }
         
-        * {
-            box-sizing: border-box;
-        }
-        
+        /* Force body to light theme */
         body {
-            background-color: var(--background-color) !important;
-            color: var(--text-color) !important;
-            font-family: 'Inter', sans-serif;
+            background-color: #FFFFFF !important;
+            color: #000000 !important;
         }
         
+        /* Override all Streamlit elements */
+        .stApp {
+            background-color: #FFFFFF !important;
+            color: #000000 !important;
+        }
+        
+        /* Main container */
+        .main {
+            background-color: #FFFFFF !important;
+            color: #000000 !important;
+        }
+        
+        /* Sidebar */
+        .css-1d391kg, .css-1v0mbdj, .css-kyu8fa, .css-1l02mno {
+            background-color: #FFFFFF !important;
+            color: #000000 !important;
+        }
+        
+        /* All text elements */
+        h1, h2, h3, h4, h5, h6, p, span, div, label, li {
+            color: #000000 !important;
+        }
+        
+        /* Input elements */
+        input, select, textarea {
+            background-color: #E6F3FF !important;
+            color: #000000 !important;
+            border: 1px solid #CCCCCC !important;
+        }
+        
+        /* Buttons */
+        button, .stButton > button {
+            background-color: #333333 !important;
+            color: #FFFFFF !important;
+        }
+        
+        /* Dataframes */
+        .dataframe, .dataframe td, .dataframe th {
+            background-color: #FFFFFF !important;
+            color: #000000 !important;
+            border: 1px solid #DDDDDD !important;
+        }
+        
+        /* Headers and sections */
         .header-container {
             position: relative;
             width: 100%;
@@ -78,6 +119,7 @@ def apply_custom_css():
             align-items: flex-start;
             justify-content: flex-end;
             padding: 0.2rem 4rem 1rem 1rem;
+            background-color: #FFFFFF !important;
         }
         
         .header-content {
@@ -110,7 +152,7 @@ def apply_custom_css():
         
         .main-header {
             font-size: 5.6rem;
-            color: var(--text-color) !important;
+            color: #000000 !important;
             text-align: right;
             margin-bottom: 0.5rem;
             font-weight: 700;
@@ -118,7 +160,7 @@ def apply_custom_css():
         
         .header-subtitle {
             font-size: 3rem !important;
-            color: var(--text-color) !important;
+            color: #000000 !important;
             text-align: right;
             margin-bottom: 1rem;
             line-height: 1.1;
@@ -126,72 +168,50 @@ def apply_custom_css():
         
         .section-title {
             font-size: 1.5rem;
-            color: var(--text-color) !important;
+            color: #000000 !important;
             margin-top: 1.5rem;
             margin-bottom: 1rem;
             font-weight: 600;
         }
         
-        .stApp {
-            background-color: var(--background-color) !important;
-            color: var(--text-color) !important;
-        }
-        
-        /* Override all Streamlit elements to use light theme */
-        div[data-testid="stVerticalBlock"] > div[style*="flex-direction: column;"] > div[style*="flex-direction: column;"] {
-            background-color: var(--background-color) !important;
-            border: none !important;
-            box-shadow: none !important;
-            color: var(--text-color) !important;
-        }
-        
-        div[data-testid="stVerticalBlockBorderWrapper"] {
-            border: none !important;
-        }
-        
-        div[data-testid="stVerticalBlock"] {
-            border: none !important;
-            box-shadow: none !important;
-            background-color: var(--background-color) !important;
-            color: var(--text-color) !important;
-        }
-        
+        /* Input containers */
         .stTextInput > div > div > input {
             background-color: #E6F3FF !important;
             border: 1px solid transparent !important;
             border-radius: 0.375rem !important;
-            color: var(--text-color) !important;
-            caret-color: var(--text-color) !important;
+            color: #000000 !important;
+            caret-color: #000000 !important;
         }
         
         .stSelectbox > div > div > select {
             background-color: #E6F3FF !important;
             border: 1px solid transparent !important;
             border-radius: 0.375rem !important;
-            color: var(--text-color) !important;
-            caret-color: var(--text-color) !important;
+            color: #000000 !important;
+            caret-color: #000000 !important;
         }
         
         .stNumberInput > div > div > input {
             background-color: #E6F3FF !important;
             border: 1px solid transparent !important;
             border-radius: 0.375rem !important;
-            color: var(--text-color) !important;
-            caret-color: var(--text-color) !important;
+            color: #000000 !important;
+            caret-color: #000000 !important;
         }
         
         .snowball-inputs .stNumberInput > div > div > input,
         .snowball-inputs .stSelectbox > div > div > select {
             background-color: #bfbfbf !important;
-            color: var(--text-color) !important;
+            color: #000000 !important;
         }
         
         .stTextInput > div > div > input::placeholder {
             color: #AAAAAA !important;
         }
         
+        /* Buttons */
         .stButton button, button, .stDownloadButton, .stDownloadButton button {
-            background-color: var(--primary-color) !important;
+            background-color: #333333 !important;
             color: #FFFFFF !important;
             border: none !important;
             border-radius: 0.375rem !important;
@@ -204,7 +224,7 @@ def apply_custom_css():
         }
         
         button[kind="primary"] {
-            background-color: var(--primary-color) !important;
+            background-color: #333333 !important;
             color: #FFFFFF !important;
         }
         
@@ -224,12 +244,14 @@ def apply_custom_css():
             color: #FFFFFF !important;
         }
         
+        /* Data display */
         .stDataFrame {
             border: none !important;
-            background-color: var(--background-color) !important;
-            color: var(--text-color) !important;
+            background-color: #FFFFFF !important;
+            color: #000000 !important;
         }
         
+        /* Paper cards */
         .paper-card {
             background-color: #1E3A8A !important;
             color: #FFFFFF !important;
@@ -246,7 +268,7 @@ def apply_custom_css():
         
         .doi-badge {
             background-color: #FFFFFF !important;
-            color: var(--text-color) !important;
+            color: #000000 !important;
             padding: 0.25rem 0.75rem !important;
             border-radius: 9999px !important;
             font-size: 0.875rem !important;
@@ -258,7 +280,7 @@ def apply_custom_css():
         
         .citation-badge {
             background-color: #FFFFFF !important;
-            color: var(--text-color) !important;
+            color: #000000 !important;
             padding: 0.25rem 0.75rem !important;
             border-radius: 9999px !important;
             font-size: 0.875rem !important;
@@ -290,13 +312,15 @@ def apply_custom_css():
             margin-top: 0.5rem !important;
         }
         
+        /* Network visualization */
         .network-container {
             border-radius: 0.5rem !important;
             overflow: hidden !important;
             margin-bottom: 2rem !important;
-            border: 1px solid var(--text-color) !important;
+            border: 1px solid #000000 !important;
         }
         
+        /* Progress and panels */
         .progress-container {
             margin: 1rem 0 !important;
         }
@@ -322,120 +346,74 @@ def apply_custom_css():
             display: none !important;
         }
         
+        /* Override all Streamlit component styles */
         .css-1d391kg, .css-1v0mbdj, .css-1kyxreq, .css-1r6slv0, .css-1c0m1x2 {
-            background-color: var(--background-color) !important;
-            color: var(--text-color) !important;
+            background-color: #FFFFFF !important;
+            color: #000000 !important;
         }
         
         .dataframe {
-            background-color: var(--background-color) !important;
-            color: var(--text-color) !important;
+            background-color: #FFFFFF !important;
+            color: #000000 !important;
         }
         
         .dataframe td {
-            background-color: var(--background-color) !important;
-            color: var(--text-color) !important;
+            background-color: #FFFFFF !important;
+            color: #000000 !important;
         }
         
         .dataframe th {
-            background-color: var(--background-color) !important;
-            color: var(--text-color) !important;
+            background-color: #FFFFFF !important;
+            color: #000000 !important;
         }
         
         .streamlit-expanderHeader {
-            background-color: var(--background-color) !important;
-            color: var(--text-color) !important;
+            background-color: #FFFFFF !important;
+            color: #000000 !important;
         }
         
         .stRadio > div {
-            background-color: var(--background-color) !important;
-            color: var(--text-color) !important;
+            background-color: #FFFFFF !important;
+            color: #000000 !important;
         }
         
         .stSelectbox > div {
-            background-color: var(--background-color) !important;
-            color: var(--text-color) !important;
+            background-color: #FFFFFF !important;
+            color: #000000 !important;
         }
         
         .stNumberInput > div {
-            background-color: var(--background-color) !important;
-            color: var(--text-color) !important;
+            background-color: #FFFFFF !important;
+            color: #000000 !important;
         }
         
         .stTextInput > div {
-            background-color: var(--background-color) !important;
-            color: var(--text-color) !important;
+            background-color: #FFFFFF !important;
+            color: #000000 !important;
         }
         
         .stButton > button {
-            background-color: var(--primary-color) !important;
+            background-color: #333333 !important;
             color: #FFFFFF !important;
         }
         
         .stDownloadButton {
-            background-color: var(--primary-color) !important;
+            background-color: #333333 !important;
             color: #FFFFFF !important;
         }
         
         .stProgress > div > div > div {
-            background-color: var(--primary-color) !important;
+            background-color: #333333 !important;
         }
         
-        p, h1, h2, h3, h4, h5, h6, li, span, div, label {
-            color: var(--text-color) !important;
-        }
-        
-        input, select, textarea {
-            color: var(--text-color) !important;
-        }
-        
+        /* Alerts */
         .stAlert {
-            background-color: var(--background-color) !important;
-            color: var(--text-color) !important;
-            border: 1px solid var(--text-color) !important;
+            background-color: #FFFFFF !important;
+            color: #000000 !important;
+            border: 1px solid #000000 !important;
         }
         
-        .paper-card, .paper-card *, .paper-card p, .paper-card h3, .paper-card strong, .paper-card span {
-            color: #FFFFFF !important;
-        }
-        
-        .doi-badge, .citation-badge {
-            color: var(--text-color) !important;
-        }
-        
-        .stButton button, button, .stDownloadButton, .stDownloadButton button,
-        .stButton button *, button *, .stDownloadButton *, .stDownloadButton button * {
-            color: #FFFFFF !important;
-        }
-        
-        .download-options {
-            display: flex !important;
-            flex-direction: row !important;
-            gap: 5px !important;
-            margin-top: 1rem !important;
-        }
-        
-        .download-options > div {
-            display: inline-block !important;
-        }
-        
-        .error-message {
-            color: #EF4444 !important;
-            font-size: 0.875rem !important;
-            margin-top: 0.5rem !important;
-        }
-        
-        .progress-details {
-            display: flex !important;
-            justify-content: space-between !important;
-            margin-bottom: 0.5rem !important;
-        }
-        
-        .progress-text {
-            font-size: 0.875rem !important;
-            color: var(--text-color) !important;
-        }
-        
+        /* Footer */
         .footer-container {
             position: fixed !important;
             bottom: 0 !important;
@@ -444,7 +422,7 @@ def apply_custom_css():
             display: flex !important;
             justify-content: space-between !important;
             align-items: center !important;
-            color: var(--text-color) !important;
+            color: #000000 !important;
             padding: 1rem !important;
             font-size: 1.05rem !important;
             background-color: #f8f9fa !important;
@@ -475,6 +453,37 @@ def apply_custom_css():
         
         .main-content {
             padding-bottom: 80px !important;
+        }
+        
+        /* Download options */
+        .download-options {
+            display: flex !important;
+            flex-direction: row !important;
+            gap: 5px !important;
+            margin-top: 1rem !important;
+        }
+        
+        .download-options > div {
+            display: inline-block !important;
+        }
+        
+        /* Error messages */
+        .error-message {
+            color: #EF4444 !important;
+            font-size: 0.875rem !important;
+            margin-top: 0.5rem !important;
+        }
+        
+        /* Progress details */
+        .progress-details {
+            display: flex !important;
+            justify-content: space-between !important;
+            margin-bottom: 0.5rem !important;
+        }
+        
+        .progress-text {
+            font-size: 0.875rem !important;
+            color: #000000 !important;
         }
         
         /* Responsiveness */
