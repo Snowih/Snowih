@@ -13,10 +13,11 @@ import base64
 from io import BytesIO
 from bs4 import BeautifulSoup
 
+
 CROSSREF_API = "https://api.crossref.org/works/"
 SEMANTIC_SCHOLAR_API = "https://api.semanticscholar.org/graph/v1/paper/"
-HUGGINGFACE_API = "https://api.inference.huggingface.co/models/facebook/bart-large-mnli"
 DOI_RESOLVER = "https://doi.org/"
+
 
 st.set_page_config(
     page_title="Snowih",
@@ -34,6 +35,8 @@ def initialize_session_state():
         st.session_state.selected_node = None
     if 'criteria' not in st.session_state:
         st.session_state.criteria = {}
+    if 'batch_criteria' not in st.session_state:
+        st.session_state.batch_criteria = {}
     if 'screening_results' not in st.session_state:
         st.session_state.screening_results = {}
     if 'main_paper' not in st.session_state:
@@ -44,6 +47,12 @@ def initialize_session_state():
         st.session_state.snowballed_papers = set()
     if 'failed_dois' not in st.session_state:
         st.session_state.failed_dois = set()
+    if 'hf_api_key' not in st.session_state:
+        st.session_state.hf_api_key = ""
+    if 'hf_model' not in st.session_state:
+        st.session_state.hf_model = "facebook/bart-large-mnli"
+    if 'criteria_framework' not in st.session_state:
+        st.session_state.criteria_framework = "Manual"
 
 initialize_session_state()
 
@@ -548,14 +557,17 @@ apply_custom_css()
 
 def get_image_as_base64(path):
     try:
-        with open(path, "rb") as image_file:
-            return base64.b64encode(image_file.read()).decode()
+        if os.path.exists(path):
+            with open(path, "rb") as image_file:
+                return base64.b64encode(image_file.read()).decode()
+        else:
+    
+            return ""
     except Exception as e:
-        st.error(f"Error loading image {path}: {e}")
         return ""
 
 def render_header():
-    logo_base64 = get_image_as_base64("assets/1.png")
+    logo_base64 = get_image_as_base64("assets/snowih_logo.png")
     
     st.markdown(f"""
     <div class="header-container">
@@ -822,100 +834,125 @@ def screen_paper_with_ai(paper, criteria):
         if paper.get('abstract'):
             text += " " + paper.get('abstract', '')
         
+        framework = criteria.get('framework', 'Manual')
+        
+
+        model_name = st.session_state.get('hf_model', 'facebook/bart-large-mnli')
+        api_url = f"https://api.inference.huggingface.co/models/{model_name}"
+        headers = {}
+        if st.session_state.get('hf_api_key'):
+            headers['Authorization'] = f"Bearer {st.session_state.hf_api_key}"
+        
+  
         candidate_labels = []
+        hypothesis_text = ""
         
-        if criteria.get('keywords'):
-            keywords = [k.strip() for k in criteria.get('keywords', '').split(',')]
-            for keyword in keywords:
-                candidate_labels.append(f"related to {keyword}")
-        
-        if criteria.get('study_type') and criteria.get('study_type') != 'Any':
-            candidate_labels.append(f"about {criteria.get('study_type').lower()}")
-        
-        year = paper.get('year', '')
-        if year and criteria.get('from_year') and criteria.get('to_year'):
-            try:
-                year_int = int(year)
-                from_year = criteria.get('from_year')
-                to_year = criteria.get('to_year')
-                if year_int >= from_year and year_int <= to_year:
-                    candidate_labels.append("published in the specified time range")
-            except:
-                pass
-        
-        if not candidate_labels:
-            return {
-                'eligible': True,
-                'year_match': True,
-                'keyword_match': True,
-                'study_type_match': True,
-                'ai_confidence': 1.0
-            }
-        
+        if framework == "PICO":
+            population = criteria.get('pico_population', '')
+            intervention = criteria.get('pico_intervention', '')
+            comparison = criteria.get('pico_comparison', '')
+            outcome = criteria.get('pico_outcome', '')
+            
+            parts = []
+            if population: parts.append(f"population: {population}")
+            if intervention: parts.append(f"intervention: {intervention}")
+            if comparison: parts.append(f"comparison: {comparison}")
+            if outcome: parts.append(f"outcome: {outcome}")
+            
+            if not parts:
+           
+                return {'eligible': True, 'ai_confidence': 1.0}
+            
+            hypothesis_text = "This study involves " + ", ".join(parts) + "."
+            candidate_labels = ["Relevant", "Irrelevant"]
+            
+        else: 
+            keywords = criteria.get('keywords', '')
+            study_type = criteria.get('study_type', '')
+            
+            if not keywords and not study_type:
+                return {'eligible': True, 'ai_confidence': 1.0}
+            
+            if keywords:
+                candidate_labels.append(f"related to {keywords}")
+            if study_type and study_type != 'Any':
+                candidate_labels.append(f"about {study_type.lower()}")
+            
+            hypothesis_text = None
+            
         payload = {
             "inputs": text,
             "parameters": {"candidate_labels": candidate_labels}
         }
         
-        response = requests.post(HUGGINGFACE_API, json=payload)
+        if hypothesis_text and framework == "PICO":
+            payload["parameters"]["hypothesis_template"] = hypothesis_text
+
+        
+        if not st.session_state.get('hf_api_key'):
+            st.warning("No API Key provided. Falling back to Rule-Based Screening.")
+            return screen_paper_with_rules(paper, criteria)
+
+        response = requests.post(api_url, json=payload, headers=headers, timeout=10)
         
         if response.status_code != 200:
+   
             return screen_paper_with_rules(paper, criteria)
         
         result = response.json()
         
-        scores = {label: score for label, score in zip(result['labels'], result['scores'])}
-        
-        keyword_match = True
-        study_type_match = True
-        year_match = True
-        
-        if criteria.get('keywords'):
-            keyword_scores = [scores.get(f"related to {k.strip()}", 0) for k in criteria.get('keywords', '').split(',')]
-            keyword_match = max(keyword_scores) > 0.5 if keyword_scores else True
-        
-        if criteria.get('study_type') and criteria.get('study_type') != 'Any':
-            study_type_score = scores.get(f"about {criteria.get('study_type').lower()}", 0)
-            study_type_match = study_type_score > 0.5
-        
-        year = paper.get('year', '')
-        if year and criteria.get('from_year') and criteria.get('to_year'):
-            try:
-                year_int = int(year)
-                from_year = criteria.get('from_year')
-                to_year = criteria.get('to_year')
-                year_match = year_int >= from_year and year_int <= to_year
-            except:
-                year_match = True
-        
-        eligible = keyword_match and study_type_match and year_match
-        
-        overall_confidence = 0
-        if criteria.get('keywords'):
-            keyword_scores = [scores.get(f"related to {k.strip()}", 0) for k in criteria.get('keywords', '').split(',')]
-            overall_confidence += max(keyword_scores) if keyword_scores else 1
-        
-        if criteria.get('study_type') and criteria.get('study_type') != 'Any':
-            overall_confidence += scores.get(f"about {criteria.get('study_type').lower()}", 0)
-        
-        if criteria.get('from_year') and criteria.get('to_year'):
-            overall_confidence += scores.get("published in the specified time range", 1)
-        
-        num_criteria = sum([
-            1 if criteria.get('keywords') else 0,
-            1 if criteria.get('study_type') and criteria.get('study_type') != 'Any' else 0,
-            1 if criteria.get('from_year') and criteria.get('to_year') else 0
-        ])
-        
-        overall_confidence = overall_confidence / max(num_criteria, 1)
-        
-        return {
-            'eligible': eligible,
-            'year_match': year_match,
-            'keyword_match': keyword_match,
-            'study_type_match': study_type_match,
-            'ai_confidence': overall_confidence
-        }
+        if framework == "PICO":
+
+            labels = result.get('labels', [])
+            scores = result.get('scores', [])
+            
+            relevant_score = 0
+            for label, score in zip(labels, scores):
+                if label == "Relevant":
+                    relevant_score = score
+                    break
+            
+            eligible = relevant_score > 0.5
+            
+            return {
+                'eligible': eligible,
+                'ai_confidence': relevant_score,
+                'year_match': True,
+                'keyword_match': eligible,
+                'study_type_match': eligible
+            }
+        else:
+
+            scores = {label: score for label, score in zip(result['labels'], result['scores'])}
+            
+            keyword_match = True
+            study_type_match = True
+            
+            keywords = criteria.get('keywords', '')
+            if keywords:
+                keyword_scores = [scores.get(f"related to {k.strip()}", 0) for k in keywords.split(',')]
+                keyword_match = max(keyword_scores) > 0.5 if keyword_scores else True
+            
+            study_type = criteria.get('study_type', '')
+            if study_type and study_type != 'Any':
+                study_type_score = scores.get(f"about {study_type.lower()}", 0)
+                study_type_match = study_type_score > 0.5
+            
+            eligible = keyword_match and study_type_match
+            
+   
+            confs = []
+            if keywords: confs.append(max([scores.get(f"related to {k.strip()}", 0) for k in keywords.split(',')]))
+            if study_type: confs.append(scores.get(f"about {study_type.lower()}", 0))
+            overall_confidence = sum(confs) / len(confs) if confs else 0
+
+            return {
+                'eligible': eligible,
+                'year_match': True, 
+                'keyword_match': keyword_match,
+                'study_type_match': study_type_match,
+                'ai_confidence': overall_confidence
+            }
     
     except Exception as e:
         return screen_paper_with_rules(paper, criteria)
@@ -925,6 +962,8 @@ def screen_paper_with_rules(paper, criteria):
     abstract = paper.get('abstract', '').lower()
     text = f"{title} {abstract}"
     year = paper.get('year', '')
+    
+    framework = criteria.get('framework', 'Manual')
     
     year_match = True
     if criteria.get('from_year') and year:
@@ -943,26 +982,59 @@ def screen_paper_with_rules(paper, criteria):
         except:
             pass
     
-    keyword_match = True
-    if criteria.get('keywords'):
-        keywords = [k.lower() for k in criteria.get('keywords', '').split(',')]
-        if not any(keyword in text for keyword in keywords):
-            keyword_match = False
+    eligible = year_match
     
-    study_type_match = True
-    if criteria.get('study_type') and criteria.get('study_type') != 'Any':
-        study_type = criteria.get('study_type').lower()
-        if study_type not in text:
-            study_type_match = False
+    if framework == "Manual":
+        keyword_match = True
+        if criteria.get('keywords'):
+            keywords = [k.lower() for k in criteria.get('keywords', '').split(',')]
+            if not any(keyword in text for keyword in keywords):
+                keyword_match = False
+        
+        study_type_match = True
+        if criteria.get('study_type') and criteria.get('study_type') != 'Any':
+            study_type = criteria.get('study_type').lower()
+            if study_type not in text:
+                study_type_match = False
+        
+        eligible = eligible and keyword_match and study_type_match
+        return {
+            'eligible': eligible,
+            'year_match': year_match,
+            'keyword_match': keyword_match,
+            'study_type_match': study_type_match,
+            'ai_confidence': 1.0 if eligible else 0.0
+        }
     
-    eligible = year_match and keyword_match and study_type_match
-    
+    elif framework == "PICO":
+
+        components = [
+            criteria.get('pico_population', '').lower(),
+            criteria.get('pico_intervention', '').lower(),
+            criteria.get('pico_comparison', '').lower(),
+            criteria.get('pico_outcome', '').lower()
+        ]
+        
+
+        for comp in components:
+            if comp and comp not in text:
+                eligible = False
+                break
+                
+        return {
+            'eligible': eligible,
+            'year_match': year_match,
+            'keyword_match': eligible, 
+            'study_type_match': eligible, 
+            'ai_confidence': 1.0 if eligible else 0.0
+        }
+        
     return {
-        'eligible': eligible,
-        'year_match': year_match,
-        'keyword_match': keyword_match,
-        'study_type_match': study_type_match,
-        'ai_confidence': 1.0 if eligible else 0.0
+        'eligible': True,
+        'year_match': True,
+        'keyword_match': True,
+        'study_type_match': True,
+        'ai_confidence': 1.0
     }
 
 def add_paper_to_graph(doi, parent_doi=None, is_main_paper=False, criteria=None):
@@ -974,7 +1046,9 @@ def add_paper_to_graph(doi, parent_doi=None, is_main_paper=False, criteria=None)
     paper = fetch_paper(doi)
     if not paper or not paper.get('title'):
         st.session_state.failed_dois.add(doi)
-        st.error(f"Failed to fetch paper with DOI: {doi}")
+
+        if is_main_paper: 
+            st.error(f"Failed to fetch paper with DOI: {doi}")
         return False
         
     st.session_state.papers[doi] = paper
@@ -1295,24 +1369,44 @@ def create_pdf():
         st.error(f"Error creating PDF: {str(e)}")
         return None
 
-def render_criteria_panel():
-    st.markdown("<div class='criteria-panel'>", unsafe_allow_html=True)
-    st.markdown("## Set Screening Criteria")
-
+def get_criteria_inputs(prefix=""):
+    """Helper to get criteria inputs based on selected framework"""
+    framework = st.session_state.get(f'{prefix}framework', 'Manual')
+    criteria = {'framework': framework}
+    
     col1, col2 = st.columns(2)
-
+    
     with col1:
-        keywords = st.text_input(
-            "Research Keywords (comma separated):",
-            placeholder="e.g., machine learning, healthcare, diagnosis",
-            key="keywords_input"
-        )
-        
-        study_type = st.selectbox(
-            "Study Type:",
-            ["Any", "Experimental", "Review", "Case Study", "Observational", "Simulation"],
-            key="study_type_input"
-        )
+        if framework == "Manual":
+            keywords = st.text_input(
+                "Research Keywords (comma separated):",
+                placeholder="e.g., machine learning, healthcare, diagnosis",
+                key=f"{prefix}keywords"
+            )
+            criteria['keywords'] = keywords
+            
+            study_type = st.selectbox(
+                "Study Type:",
+                ["Any", "Experimental", "Review", "Case Study", "Observational", "Simulation"],
+                key=f"{prefix}study_type"
+            )
+            criteria['study_type'] = study_type
+            
+        elif framework == "PICO":
+            st.markdown("### PICO Framework")
+            population = st.text_input(
+                "Population (P):",
+                placeholder="e.g., elderly patients",
+                key=f"{prefix}pico_population"
+            )
+            criteria['pico_population'] = population
+            
+            intervention = st.text_input(
+                "Intervention (I):",
+                placeholder="e.g., aspirin",
+                key=f"{prefix}pico_intervention"
+            )
+            criteria['pico_intervention'] = intervention
 
     with col2:
         from_year = st.number_input(
@@ -1320,24 +1414,53 @@ def render_criteria_panel():
             min_value=1900,
             max_value=2030,
             value=2010,
-            key="from_year_input"
+            key=f"{prefix}from_year"
         )
+        criteria['from_year'] = from_year
         
         to_year = st.number_input(
             "To Year:",
             min_value=1900,
             max_value=2030,
             value=2023,
-            key="to_year_input"
+            key=f"{prefix}to_year"
         )
+        criteria['to_year'] = to_year
+        
+        if framework == "PICO":
+            comparison = st.text_input(
+                "Comparison (C):",
+                placeholder="e.g., placebo",
+                key=f"{prefix}pico_comparison"
+            )
+            criteria['pico_comparison'] = comparison
+            
+            outcome = st.text_input(
+                "Outcome (O):",
+                placeholder="e.g., stroke incidence",
+                key=f"{prefix}pico_outcome"
+            )
+            criteria['pico_outcome'] = outcome
+            
+    return criteria
+
+def render_criteria_panel():
+    st.markdown("<div class='criteria-panel'>", unsafe_allow_html=True)
+    st.markdown("## Set Screening Criteria")
+    
+
+    framework = st.radio(
+        "Select Framework:",
+        ["Manual", "PICO"],
+        horizontal=True,
+        key="criteria_framework_select"
+    )
+    st.session_state.criteria_framework = framework
+    
+    criteria = get_criteria_inputs(prefix="criteria_")
 
     if st.button("Set Criteria", key="set_criteria_btn"):
-        st.session_state.criteria = {
-            'keywords': keywords,
-            'study_type': study_type,
-            'from_year': from_year,
-            'to_year': to_year
-        }
+        st.session_state.criteria = criteria
         st.session_state.criteria_set = True
         st.success("Screening criteria set!")
 
@@ -1360,7 +1483,8 @@ def render_control_panel():
         )
 
     with col2:
-        if st.button("Add Paper", key="add_paper_btn", use_container_width=True):
+
+        if st.button("Add Paper", key="add_paper_btn", width='stretch'):
             if doi_input:
                 with st.spinner("Fetching paper..."):
                     start_time = time.time()
@@ -1374,7 +1498,7 @@ def render_control_panel():
                 st.error("Please enter a valid DOI")
 
     with col3:
-        if st.button("Reset Graph", key="reset_graph_btn", use_container_width=True):
+        if st.button("Reset Graph", key="reset_graph_btn", width='stretch'):
             st.session_state.graph = nx.DiGraph()
             st.session_state.papers = {}
             st.session_state.selected_node = None
@@ -1456,8 +1580,9 @@ def render_paper_details():
                     'AI Confidence': ''
                 })
         
+      
         ref_df = pd.DataFrame(ref_data)
-        st.dataframe(ref_df, use_container_width=True)
+        st.dataframe(ref_df, width='stretch', use_container_width=True)
         
         if st.button("Load All References", key="load_all_refs"):
             with st.spinner("Loading all references..."):
@@ -1496,9 +1621,17 @@ def render_snowballing_section():
         use_same_criteria = st.radio(
             "Use same criteria for all?",
             ["Yes", "No"],
-            key="use_same_criteria"
+            key="use_same_criteria",
+            horizontal=True
         )
         
+
+        batch_criteria_to_use = st.session_state.criteria
+        if use_same_criteria == "No":
+            st.markdown("### Batch Snowballing Criteria")
+            
+            batch_criteria_to_use = get_criteria_inputs(prefix="batch_")
+            
         if snowball_option == "Snowball and screen snowballed paper (1 at a time)":
             selected_snowball_paper = st.selectbox(
                 "Select a snowballed paper to snowball further:",
@@ -1510,47 +1643,13 @@ def render_snowballing_section():
             if selected_snowball_doi:
                 selected_snowball_doi = selected_snowball_doi.group(1)
             
+
+            final_criteria = st.session_state.criteria if use_same_criteria == "Yes" else batch_criteria_to_use
+            
             if st.button("Snowball Selected Paper", key="snowball_selected_btn"):
                 if selected_snowball_doi:
                     with st.spinner(f"Snowballing {selected_snowball_doi}..."):
-                        if use_same_criteria == "No":
-                            st.markdown("### Set New Criteria")
-                            st.markdown('<div class="snowball-inputs">', unsafe_allow_html=True)
-                            new_keywords = st.text_input(
-                                "New Research Keywords (comma separated):",
-                                key="new_keywords"
-                            )
-                            new_study_type = st.selectbox(
-                                "New Study Type:",
-                                ["Any", "Experimental", "Review", "Case Study", "Observational", "Simulation"],
-                                key="new_study_type"
-                            )
-                            new_from_year = st.number_input(
-                                "New From Year:",
-                                min_value=1900,
-                                max_value=2030,
-                                value=2010,
-                                key="new_from_year"
-                            )
-                            new_to_year = st.number_input(
-                                "New To Year:",
-                                min_value=1900,
-                                max_value=2030,
-                                value=2023,
-                                key="new_to_year"
-                            )
-                            st.markdown('</div>', unsafe_allow_html=True)
-                            
-                            new_criteria = {
-                                'keywords': new_keywords,
-                                'study_type': new_study_type,
-                                'from_year': new_from_year,
-                                'to_year': new_to_year
-                            }
-                        else:
-                            new_criteria = st.session_state.criteria
-                        
-                        success_count = snowball_paper(selected_snowball_doi, new_criteria)
+                        success_count = snowball_paper(selected_snowball_doi, final_criteria)
                         
                         st.success(f"Added {success_count} references for {selected_snowball_doi}!")
                         
@@ -1559,45 +1658,11 @@ def render_snowballing_section():
                     st.error("Please select a paper to snowball")
         
         else:
+
+            final_criteria = st.session_state.criteria if use_same_criteria == "Yes" else batch_criteria_to_use
+            
             if st.button("Snowball All Papers", key="snowball_all_btn"):
                 with st.spinner("Snowballing all papers..."):
-                    if use_same_criteria == "No":
-                        st.markdown("### Set New Criteria")
-                        st.markdown('<div class="snowball-inputs">', unsafe_allow_html=True)
-                        all_new_keywords = st.text_input(
-                            "New Research Keywords (comma separated):",
-                            key="all_new_keywords"
-                        )
-                        all_new_study_type = st.selectbox(
-                            "New Study Type:",
-                            ["Any", "Experimental", "Review", "Case Study", "Observational", "Simulation"],
-                            key="all_new_study_type"
-                        )
-                        all_new_from_year = st.number_input(
-                            "New From Year:",
-                            min_value=1900,
-                            max_value=2030,
-                            value=2010,
-                            key="all_new_from_year"
-                        )
-                        all_new_to_year = st.number_input(
-                            "New To Year:",
-                            min_value=1900,
-                            max_value=2030,
-                            value=2023,
-                            key="all_new_to_year"
-                        )
-                        st.markdown('</div>', unsafe_allow_html=True)
-                        
-                        all_new_criteria = {
-                            'keywords': all_new_keywords,
-                            'study_type': all_new_study_type,
-                            'from_year': all_new_from_year,
-                            'to_year': all_new_to_year
-                        }
-                    else:
-                        all_new_criteria = st.session_state.criteria
-                    
                     status_text = st.empty()
                     start_time = time.time()
                     
@@ -1608,7 +1673,7 @@ def render_snowballing_section():
                     for i, doi in enumerate(papers_to_snowball):
                         detailed_progress_bar(i+1, len(papers_to_snowball), start_time, status_text)
                         
-                        success_count = snowball_paper(doi, all_new_criteria)
+                        success_count = snowball_paper(doi, final_criteria)
                         total_success += success_count
                         time.sleep(0.5)
                     
@@ -1662,10 +1727,14 @@ def render_network_visualization():
             mime="text/csv"
         )
     
+
+    with open("paper_network.html", 'r', encoding='utf-8') as f:
+        html_content = f.read()
+
     with download_cols[2]:
         st.download_button(
             label="Download HTML",
-            data=HtmlFile.read(),
+            data=html_content,
             file_name=f"paper_network_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
             mime="text/html"
         )
@@ -1824,6 +1893,20 @@ def render_footer():
     """, unsafe_allow_html=True)
 
 def main():
+    
+    with st.sidebar:
+        st.markdown("### ⚙️ AI Settings")
+        st.info("To use AI screening, please enter your HuggingFace API Token.")
+        api_key = st.text_input("HuggingFace API Token", type="password", value=st.session_state.hf_api_key)
+        st.session_state.hf_api_key = api_key
+        
+        model_name = st.text_input("AI Model Name", value=st.session_state.hf_model, placeholder="facebook/bart-large-mnli")
+        st.session_state.hf_model = model_name
+        
+        st.markdown("---")
+        st.markdown("### ℹ️ About")
+        st.markdown("Snowih uses AI to screen research papers based on your criteria using the NLI (Natural Language Inference) capability of the selected model.")
+
     st.markdown("<div class='main-content'>", unsafe_allow_html=True)
     render_header()
     render_criteria_panel()

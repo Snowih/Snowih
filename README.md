@@ -62,4 +62,3 @@ Sample graphs
 
 ![5](example/5.png)
 
-![6](example/ss.png)
