@@ -24,19 +24,19 @@ It identifies references from uploaded studies and recursively explores their ci
 * **Export Options**: Save screened datasets, graphs, and logs for documentation or PRISMA reporting
 
 
-* **Future Expansion**: Planned additions include automated deduplication, citation-path mapping, count of studies matching/not matching the user criteria, seperate included/excluded tables that can be downloadable by the users, seperate only citation path mapping (very less likelihood of this cause I'm sure there might be tools for this), AI used is basic for now (will upgrade later on), More ways this tool can be beneficial and more novel, try finding better Ais (Z).
-Maybe have a look into forward snowballing but i think that cant happen, for that i need to integrate databases maybe use Access Paper API??? nah lets see. plus its not a simple API send and API receive since its just keyword eligibility based
-Also look into the keyword like let users add keyword then comma and more keyword and maybe let them adjust the strictness of ai checking based on new ais temperature and eligibility, also we can add like reviewaid basically say a user puts 5 keywords, as per the strictness (will give user this option), like any 2 keyword selected, eligibilbe rest not, also check the Ais accuracy and precision since it only screens seeingt the title and abstract so you should make this clear to your users, register this on zenodo, 
-
 ---
 
-👥 Author
+## Architecture
 
-Snowih — Created and Developed by Vihaan Sahu
-
-Maintained under the Snowih Organization
-
-**NOTE:** Snowih is under development currently and is planned to be in production in 2026.
+Snowih/
+│
+├── app.py            # Main entry point
+├── styles.py         # CSS and styling
+├── utils.py          # Helper functions and state management
+├── api.py            # External API calls (Crossref, Semantic Scholar, etc.)
+├── core.py           # Business logic (Screening, Graph building)
+├── visualizations.py # Network generation and export logic
+└── views.py          # UI rendering functions
 
 ---
 
@@ -45,6 +45,9 @@ Maintained under the Snowih Organization
 Copyright (c) 2025 Vihaan Sahu
 
 Licensed under the **Apache License 2.0**.
+
+
+**NOTE:** Snowih is under development currently and is planned to be in production in 2026.
 
 ---
 
