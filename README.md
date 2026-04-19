@@ -26,17 +26,45 @@ It identifies references from uploaded studies and recursively explores their ci
 
 ---
 
-## Architecture
 
+## 📁 Project Structure
+
+```
 Snowih/
 │
 ├── app.py            # Main entry point
 ├── styles.py         # CSS and styling
 ├── utils.py          # Helper functions and state management
 ├── api.py            # External API calls (Crossref, Semantic Scholar, etc.)
-├── core.py           # Business logic (Screening, Graph building)
+├── core.py           # Business logic (screening, graph building)
 ├── visualizations.py # Network generation and export logic
 └── views.py          # UI rendering functions
+```
+
+### 🔍 Overview
+
+* **`app.py`**
+  The main entry point of the application. Initializes the app and orchestrates interactions between components.
+
+* **`styles.py`**
+  Contains custom CSS and styling definitions for consistent UI/UX across the application.
+
+* **`utils.py`**
+  Houses reusable helper functions and manages application state.
+
+* **`api.py`**
+  Handles all external API interactions (e.g., Crossref, Semantic Scholar), including request handling and response parsing.
+
+* **`core.py`**
+  Implements the core business logic, including study screening and graph construction workflows.
+
+* **`visualizations.py`**
+  Responsible for generating network graphs and exporting visualization outputs.
+
+* **`views.py`**
+  Defines UI rendering logic and manages how components are displayed to the user.
+
+
 
 ---
 
